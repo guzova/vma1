@@ -1,5 +1,7 @@
 package com.guzova;
 
+import java.util.Arrays;
+
 public class Solver {
     private Solver(int n) {
         this.inv = new double[n][n];
@@ -20,9 +22,9 @@ public class Solver {
             System.arraycopy(_A[d], 0, A[d], 0, n);
         for (double[] row : A)
             if (row.length != n)
-                throw new Exception("kek, wrong dimension");
+                throw new Exception("Неправильный размер");
         if (b.length != n)
-            throw new Exception("kek, wrong dimension");
+            throw new Exception("Неправильный размер ");
 
         Solver output = new Solver(n);
         double[][] E = new double[n][n];
@@ -30,6 +32,8 @@ public class Solver {
             E[d][d] = 1.0;
 
         for (int k = 0; k < n; k++) {
+
+            //в столбце находится максимальный по модулю элемент (ведущий)
             int max_ind = k;
             double max_value = 0;
             for (int i = k; i < n; i++) {
@@ -38,16 +42,28 @@ public class Solver {
                     max_value = A[i][k];
                 }
             }
+            // и вместе со строкой переставляется наверх
             if (max_ind != k) {
+
                 double[] temp = A[k];
                 A[k] = A[max_ind];
                 A[max_ind] = temp;
+
+                double[] _temp = E[k];
+                E[k] = E[max_ind];
+                E[max_ind] = _temp;
+
+                double __temp = b[k];
+                b[k] = b[max_ind];
+                b[max_ind] = __temp;
+
                 output.det *= -1;
             }
             if (Math.abs(A[k][k]) < 1e-15)
-                throw new Exception("beware, det close to zero!");
+                throw new Exception("Определитель около 0!");
             output.det *= A[k][k];
 
+            //делим верхнюю строку, неоднородность, строку обратной матрицы на ведущий эдемент
             for (int i = k + 1; i < n; i++) {
                 A[k][i] /= A[k][k];
             }
@@ -57,18 +73,20 @@ public class Solver {
             }
             A[k][k] = 1;
 
+            //отнимаем ведущую строку от нижних домноженную на первые элементы этих строк
             for (int i = k + 1; i < n; i++) {
                 for (int j = k + 1; j < n; j++) {
                     A[i][j] -= A[i][k] * A[k][j];
                 }
                 b[i] -= b[k] * A[i][k];
                 for (int j = 0; j < n; j++) {
-                    E[i][k] -= A[i][k] * E[k][j];
+                    E[i][j] -= A[i][k] * E[k][j];
                 }
                 A[i][k] = 0;
             }
         }
 
+        //обратный ход
         for (int k = n - 1; k >= 0; --k) {
             output.x[k] = b[k];
             System.arraycopy(E, 0, output.inv, 0, n);
